@@ -12,13 +12,50 @@
 	// Unique mask id so multiple board instances don't conflict
 	const maskId = `board-holes-${Math.random().toString(36).slice(2)}`;
 
+	let hoveredCol = $state(null);
+	let wrapperEl = $state(null);
+
+	function handleWindowMouseMove(e) {
+		if (!wrapperEl) return;
+		const rect = wrapperEl.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		if (x >= 0 && x < boardW && y >= 0 && y < boardH) {
+			hoveredCol = Math.floor(x / SLOT);
+		} else {
+			hoveredCol = null;
+		}
+	}
+
 	// Gravity-proportional fall duration: t ∝ √(fall distance)
 	function fallDuration(row) {
 		return Math.round(150 * Math.sqrt(row + 1));
 	}
 </script>
 
-<div class="board-wrapper" style="width:{boardW}px; height:{boardH}px;">
+<svelte:window onmousemove={handleWindowMouseMove} />
+
+<div
+	bind:this={wrapperEl}
+	class="board-wrapper"
+	style="width:{boardW}px; height:{boardH}px;"
+	role="grid"
+	aria-label="Connect 4 board"
+	tabindex="-1"
+>
+	<!-- Preview piece floating above hovered column -->
+	{#if hoveredCol !== null && !game.winner && game.gameState[hoveredCol].length < game.boardHeight}
+		<div
+			class="preview-piece {game.currentPlayer}"
+			style="
+				left:{hoveredCol * SLOT + (SLOT - PIECE) / 2}px;
+				top:{(SLOT - PIECE) / 2 - SLOT}px;
+				width:{PIECE}px;
+				height:{PIECE}px;
+			"
+		></div>
+	{/if}
+
 	<!-- Layer 1: settled pieces (skip the one currently falling) -->
 	<div class="pieces-layer">
 		{#each game.gameState as columnArray, col}
@@ -27,7 +64,7 @@
 				{@const ld = game.lastDrop}
 				{@const isFalling = ld !== null && ld.col === col && ld.row === visualRow}
 				{#if !isFalling}
-					<Piece {col} row={visualRow} {color} />
+					<Piece {col} row={visualRow} {color} size={PIECE} slot={SLOT} />
 				{/if}
 			{/each}
 		{/each}
@@ -43,6 +80,7 @@
 				style="
 					left:{ld.col * SLOT + (SLOT - PIECE) / 2}px;
 					top:{ld.row * SLOT + (SLOT - PIECE) / 2}px;
+					--piece-size:{PIECE}px;
 					--start-dy:{-((ld.row + 1) * SLOT)}px;
 					--fall-dur:{fallDur}ms;
 					--bounce-delay:{fallDur}ms;
@@ -96,6 +134,20 @@
 <style>
 	.board-wrapper {
 		position: relative;
+		overflow: visible;
+	}
+
+	.preview-piece {
+		position: absolute;
+		border-radius: 50%;
+		pointer-events: none;
+		transition: left 80ms ease;
+	}
+	.preview-piece.red {
+		background: red;
+	}
+	.preview-piece.blue {
+		background: blue;
 	}
 
 	.pieces-layer {
@@ -106,8 +158,8 @@
 	/* Falling piece: absolutely at its final slot, translated up to start above the board */
 	.falling-piece {
 		position: absolute;
-		width: 50px;
-		height: 50px;
+		width: var(--piece-size);
+		height: var(--piece-size);
 		border-radius: 50%;
 		animation:
 			c4-fall var(--fall-dur) cubic-bezier(0.5, 0, 1, 0.45) 0ms 1 normal forwards,
