@@ -1,0 +1,27 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Launch Server",
+			"request": "launch",
+			"runtimeArgs": ["run-script", "dev", "--", "--host"],
+			"runtimeExecutable": "npm",
+			"skipFiles": ["<node_internals>/**"],
+			"type": "node",
+			"console": "integratedTerminal"
+		},
+		{
+			"name": "Launch Client",
+			"request": "launch",
+			"type": "firefox",
+			"url": "http://localhost:5173",
+			"webRoot": "${workspaceFolder}/src"
+		}
+	],
+	"compounds": [
+		{
+			"name": "Full Stack Debugging",
+			"configurations": ["Launch Server", "Launch Client"]
+		}
+	]
+}
