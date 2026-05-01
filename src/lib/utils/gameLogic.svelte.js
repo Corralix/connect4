@@ -3,8 +3,11 @@ export class Connect4 {
 	boardHeight = 6;
 
 	gameState = $state([]);
+	moveHistory = $state([]);
 	winner = $state(null);
 	currentPlayer = $state('red');
+	lastDrop = $state(null);
+	#dropCount = 0;
 
 	constructor() {
 		this.reset();
@@ -14,6 +17,7 @@ export class Connect4 {
 		this.winner = null;
 		this.currentPlayer = 'red';
 		this.gameState = [];
+		this.moveHistory = [];
 
 		for (let col = 0; col < this.boardWidth; col++) {
 			this.gameState.push([]);
@@ -26,9 +30,12 @@ export class Connect4 {
 		const columnArray = this.gameState[col];
 
 		if (columnArray.length < this.boardHeight) {
-			columnArray.push(this.currentPlayer);
-			console.log(`Player ${this.currentPlayer} dropped a piece in column ${col}`);
-			this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
+			const droppingColor = this.currentPlayer;
+			const landingRow = this.boardHeight - 1 - columnArray.length;
+			columnArray.push(droppingColor);
+			this.moveHistory.push({ player: droppingColor, column: col, row: columnArray.length - 1 });
+			this.lastDrop = { col, row: landingRow, color: droppingColor, id: ++this.#dropCount };
+			this.currentPlayer = droppingColor === 'red' ? 'blue' : 'red';
 		} else {
 			console.log(`Column ${col} is full!`);
 		}

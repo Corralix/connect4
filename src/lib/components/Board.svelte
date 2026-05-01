@@ -10,9 +10,17 @@
 		<button class="column" onclick={() => game.dropPiece(colIndex)}>
 			<div id={colIndex} class="column">
 				{#each { length: game.boardHeight } as _, rowIndex}
+					{@const ld = game.lastDrop}
+					{@const inFallPath = ld !== null && ld.col === colIndex && rowIndex < ld.row}
+					{@const isLandingSlot = ld !== null && ld.col === colIndex && rowIndex === ld.row}
 					<Slot
 						id={`${colIndex} ${rowIndex}`}
 						color={columnArray[game.boardHeight - 1 - rowIndex]}
+						animationKey={ld?.id ?? 0}
+						fallingColor={inFallPath ? ld.color : null}
+						fallDelay={inFallPath ? rowIndex * 60 : 0}
+						isLanding={isLandingSlot}
+						landingDelay={isLandingSlot ? ld.row * 60 + 20 : 0}
 					/>
 				{/each}
 			</div>
