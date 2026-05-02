@@ -15,5 +15,18 @@
 	of one's own discs. Connect 4 is a solved game. The first player can always win by playing the
 	right moves.
 </p>
-<div class="game-container"></div>
-<Board />
+<div class="game-container">
+	<Board />
+</div>
+
+<style>
+	:root {
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		background-color: #525252;
+	}
+	.game-container {
+		display: flex;
+		justify-content: center;
+		margin-top: 2rem;
+	}
+</style>
