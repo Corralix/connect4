@@ -1,13 +1,13 @@
 <script>
-	import { Connect4 } from '$lib/utils/gameLogic.svelte.js';
-	import Piece from './Piece.svelte';
+	import { Connect4 } from "$lib/utils/gameLogic.svelte.js";
+	import Piece from "./Piece.svelte";
 
 	const game = new Connect4();
 
 	const SLOT = 60;
 	const PIECE = 50;
-	const boardW = game.boardWidth * SLOT;
-	const boardH = game.boardHeight * SLOT;
+	const boardW = game.BOARD_WIDTH * SLOT;
+	const boardH = game.BOARD_HEIGHT * SLOT;
 
 	// Unique mask id so multiple board instances don't conflict
 	const maskId = `board-holes-${Math.random().toString(36).slice(2)}`;
@@ -44,9 +44,9 @@
 	tabindex="-1"
 >
 	<!-- Preview piece floating above hovered column -->
-	{#if hoveredCol !== null && !game.winner && game.gameState[hoveredCol].length < game.boardHeight}
+	{#if hoveredCol !== null && !game.winner && game.gameState[hoveredCol].length < game.BOARD_HEIGHT}
 		<div
-			class="preview-piece {game.currentPlayer}"
+			class="preview-piece {game.currentPlayer ? 'blue' : 'red'}"
 			style="
 				left:{hoveredCol * SLOT + (SLOT - PIECE) / 2}px;
 				top:{(SLOT - PIECE) / 2 - SLOT}px;
@@ -59,12 +59,18 @@
 	<!-- Layer 1: settled pieces (skip the one currently falling) -->
 	<div class="pieces-layer">
 		{#each game.gameState as columnArray, col}
-			{#each columnArray as color, stackRow}
-				{@const visualRow = game.boardHeight - 1 - stackRow}
+			{#each columnArray as colorAsBinary, stackRow}
+				{@const visualRow = game.BOARD_HEIGHT - 1 - stackRow}
 				{@const ld = game.lastDrop}
 				{@const isFalling = ld !== null && ld.col === col && ld.row === visualRow}
 				{#if !isFalling}
-					<Piece {col} row={visualRow} {color} size={PIECE} slot={SLOT} />
+					<Piece
+						{col}
+						row={visualRow}
+						color={colorAsBinary ? "blue" : "red"}
+						size={PIECE}
+						slot={SLOT}
+					/>
 				{/if}
 			{/each}
 		{/each}
@@ -86,7 +92,7 @@
 					--bounce-delay:{fallDur}ms;
 				"
 				onanimationend={(e) => {
-					if (e.animationName === 'c4-bounce') game.lastDrop = null;
+					if (e.animationName === "c4-bounce") game.lastDrop = null;
 				}}
 			></div>
 		{/key}
@@ -103,8 +109,8 @@
 		<defs>
 			<mask id={maskId}>
 				<rect width={boardW} height={boardH} fill="white" />
-				{#each { length: game.boardWidth } as _, col}
-					{#each { length: game.boardHeight } as _, row}
+				{#each { length: game.BOARD_WIDTH } as _, col}
+					{#each { length: game.BOARD_HEIGHT } as _, row}
 						<circle
 							cx={col * SLOT + SLOT / 2}
 							cy={row * SLOT + SLOT / 2}
