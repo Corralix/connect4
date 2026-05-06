@@ -1,13 +1,13 @@
 <script>
-	import { Connect4 } from "$lib/utils/gameLogic.svelte.js";
+	import { Connect4 } from "$lib/utils/Game.svelte.js";
 	import Piece from "./Piece.svelte";
 
-	const game = new Connect4();
+	const Game = new Connect4();
 
 	const SLOT = 60;
 	const PIECE = 50;
-	const boardW = game.BOARD_WIDTH * SLOT;
-	const boardH = game.BOARD_HEIGHT * SLOT;
+	const boardW = Game.BOARD_WIDTH * SLOT;
+	const boardH = Game.BOARD_HEIGHT * SLOT;
 
 	// Unique mask id so multiple board instances don't conflict
 	const maskId = `board-holes-${Math.random().toString(36).slice(2)}`;
@@ -44,9 +44,9 @@
 	tabindex="-1"
 >
 	<!-- Preview piece floating above hovered column -->
-	{#if hoveredCol !== null && !game.winner && game.gameState[hoveredCol].length < game.BOARD_HEIGHT}
+	{#if hoveredCol !== null && !Game.winner && Game.gameState[hoveredCol].length < Game.BOARD_HEIGHT}
 		<div
-			class="preview-piece {game.currentPlayer ? 'blue' : 'red'}"
+			class="preview-piece {Game.currentPlayer ? 'blue' : 'red'}"
 			style="
 				left:{hoveredCol * SLOT + (SLOT - PIECE) / 2}px;
 				top:{(SLOT - PIECE) / 2 - SLOT}px;
@@ -58,10 +58,10 @@
 
 	<!-- Layer 1: settled pieces (skip the one currently falling) -->
 	<div class="pieces-layer">
-		{#each game.gameState as columnArray, col}
+		{#each Game.gameState as columnArray, col}
 			{#each columnArray as colorAsBinary, stackRow}
-				{@const visualRow = game.BOARD_HEIGHT - 1 - stackRow}
-				{@const ld = game.lastDrop}
+				{@const visualRow = Game.BOARD_HEIGHT - 1 - stackRow}
+				{@const ld = Game.lastDrop}
 				{@const isFalling = ld !== null && ld.col === col && ld.row === visualRow}
 				{#if !isFalling}
 					<Piece
@@ -77,9 +77,9 @@
 	</div>
 
 	<!-- Layer 2: falling piece (re-keyed on each drop) -->
-	{#if game.lastDrop}
-		{#key game.lastDrop.id}
-			{@const ld = game.lastDrop}
+	{#if Game.lastDrop}
+		{#key Game.lastDrop.id}
+			{@const ld = Game.lastDrop}
 			{@const fallDur = fallDuration(ld.row)}
 			<div
 				class="falling-piece {ld.color}"
@@ -92,7 +92,7 @@
 					--bounce-delay:{fallDur}ms;
 				"
 				onanimationend={(e) => {
-					if (e.animationName === "c4-bounce") game.lastDrop = null;
+					if (e.animationName === "c4-bounce") Game.lastDrop = null;
 				}}
 			></div>
 		{/key}
@@ -109,8 +109,8 @@
 		<defs>
 			<mask id={maskId}>
 				<rect width={boardW} height={boardH} fill="white" />
-				{#each { length: game.BOARD_WIDTH } as _, col}
-					{#each { length: game.BOARD_HEIGHT } as _, row}
+				{#each { length: Game.BOARD_WIDTH } as _, col}
+					{#each { length: Game.BOARD_HEIGHT } as _, row}
 						<circle
 							cx={col * SLOT + SLOT / 2}
 							cy={row * SLOT + SLOT / 2}
@@ -126,11 +126,11 @@
 
 	<!-- Layer 4: transparent per-column click buttons -->
 	<div class="click-layer">
-		{#each game.gameState as _, col}
+		{#each Game.gameState as _, col}
 			<button
 				class="col-btn"
 				style="width:{SLOT}px; left:{col * SLOT}px;"
-				onclick={() => game.dropPiece(col)}
+				onclick={() => Game.dropPiece(col)}
 				aria-label="Drop piece in column {col + 1}"
 			></button>
 		{/each}
