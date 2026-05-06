@@ -7,7 +7,7 @@ export class Connect4 {
 	gameState = $state([]);
 	moveHistory = $state([]);
 	winner = $state("");
-	currentPlayer = $state(0);
+	currentPlayer = $state(0); // 0 for red, 1 for blue
 	lastDrop = $state(null);
 	dropCount = 0;
 
@@ -31,29 +31,6 @@ export class Connect4 {
 
 		for (let col = 0; col < this.BOARD_WIDTH; col++) {
 			this.gameState.push([]);
-		}
-	}
-
-	dropPiece(col) {
-		if (this.winner) return;
-
-		const columnArray = this.gameState[col];
-
-		if (columnArray.length < this.BOARD_HEIGHT) {
-			const droppingColor = this.currentPlayer ? "blue" : "red";
-			const landingRow = this.BOARD_HEIGHT - 1 - columnArray.length;
-			columnArray.push(this.currentPlayer);
-			this.moveHistory.push({ player: droppingColor, column: col, row: columnArray.length - 1 });
-			this.lastDrop = { col, row: landingRow, color: droppingColor, id: ++this.dropCount };
-			this.currentPlayer = droppingColor === "red" ? 1 : 0;
-		} else {
-			console.log(`Column ${col} is full!`);
-		}
-
-		this.winner = this.checkIfWinnerMethodBob();
-		if (this.winner) {
-			console.log(`Game over! Winner is ${this.winner}`);
-			return;
 		}
 	}
 
@@ -106,10 +83,18 @@ export class Connect4 {
 		// console.log("Transposed Game State:", JSON.parse(JSON.stringify(transposedGameState)));
 		const diagonalWidth = this.BOARD_WIDTH + this.BOARD_HEIGHT - 1;
 		const offsetDownGameState = this.staircaseMatrix(this.gameState, "down");
-		const transposedOffsetDownGameState = this.transpose(offsetDownGameState, this.BOARD_WIDTH, diagonalWidth);
+		const transposedOffsetDownGameState = this.transpose(
+			offsetDownGameState,
+			this.BOARD_WIDTH,
+			diagonalWidth
+		);
 
 		const offsetUpGameState = this.staircaseMatrix(this.gameState, "up");
-		const transposedOffsetUpGameState = this.transpose(offsetUpGameState, this.BOARD_WIDTH, diagonalWidth);
+		const transposedOffsetUpGameState = this.transpose(
+			offsetUpGameState,
+			this.BOARD_WIDTH,
+			diagonalWidth
+		);
 
 		// Check Verticals
 		for (let col = 0; col < this.BOARD_WIDTH; col++) {
@@ -160,5 +145,28 @@ export class Connect4 {
 		}
 
 		return "";
+	}
+
+	dropPiece(col) {
+		if (this.winner) return;
+
+		const columnArray = this.gameState[col];
+
+		if (columnArray.length < this.BOARD_HEIGHT) {
+			const droppingColor = this.currentPlayer ? "blue" : "red";
+			const landingRow = this.BOARD_HEIGHT - 1 - columnArray.length;
+			columnArray.push(this.currentPlayer);
+			this.moveHistory.push({ player: droppingColor, column: col, row: columnArray.length - 1 });
+			this.lastDrop = { col, row: landingRow, color: droppingColor, id: ++this.dropCount };
+			this.currentPlayer = droppingColor === "red" ? 1 : 0;
+		} else {
+			console.log(`Column ${col} is full!`);
+		}
+
+		this.winner = this.checkIfWinnerMethodBob();
+		if (this.winner) {
+			console.log(`Game over! Winner is ${this.winner}`);
+			return;
+		}
 	}
 }
