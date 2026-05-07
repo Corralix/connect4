@@ -1,20 +1,28 @@
 <script>
 	import { Connect4 } from "$lib/utils/Game.svelte.js";
+	import { HardCPU } from "$lib/utils/cpu/HardCPU.js";
+	import { EasyCPU, MediumCPU } from "$lib/utils/cpu/EasyMediumCPU.js";
 	import Piece from "./Piece.svelte";
 
 	const Game = new Connect4();
+	// CPU plays as blue (player 1); human plays as red (player 0).
+	const CPU = new HardCPU(1);
 
+	// Visual constants: SLOT = cell size, PIECE = circle diameter
 	const SLOT = 60;
 	const PIECE = 50;
 	const boardW = Game.BOARD_WIDTH * SLOT;
 	const boardH = Game.BOARD_HEIGHT * SLOT;
 
-	// Unique mask id so multiple board instances don't conflict
+	// Each board instance needs a unique SVG mask id to avoid conflicts when
+	// multiple <Board> components are mounted at the same time.
 	const maskId = `board-holes-${Math.random().toString(36).slice(2)}`;
 
+	// hoveredCol: which column the cursor is over (null = outside the board)
 	let hoveredCol = $state(null);
 	let wrapperEl = $state(null);
 
+	// Track cursor position relative to the board wrapper to derive hoveredCol.
 	function handleWindowMouseMove(e) {
 		if (!wrapperEl) return;
 		const rect = wrapperEl.getBoundingClientRect();
@@ -31,6 +39,23 @@
 	function fallDuration(row) {
 		return Math.round(150 * Math.sqrt(row + 1));
 	}
+
+	// hoveredLogIndex: which debug log entry the cursor is over (null = none)
+	let hoveredLogIndex = $state(null);
+	// highlight: the highlight metadata for the currently hovered log entry,
+	// or null if nothing is hovered or the entry has no highlight.
+	let highlight = $derived(
+		hoveredLogIndex !== null ? (Game.logs[hoveredLogIndex]?.highlight ?? null) : null
+	);
+
+	// After the human drops a piece, wait briefly then let the CPU take its turn.
+	// The delay gives the fall animation time to start before the CPU piece drops.
+	$effect(() => {
+		if (!Game.winner && Game.currentPlayer === CPU.playingAs) {
+			const timeout = setTimeout(() => CPU.playTurn(Game), 600);
+			return () => clearTimeout(timeout);
+		}
+	});
 </script>
 
 <svelte:window onmousemove={handleWindowMouseMove} />
@@ -124,7 +149,51 @@
 		<rect width={boardW} height={boardH} fill="#eeff00" mask="url(#{maskId})" />
 	</svg>
 
-	<!-- Layer 4: transparent per-column click buttons -->
+	<!-- Layer 4: highlight overlay -->
+	{#if highlight}
+		<svg class="highlight-svg" width={boardW} height={boardH} aria-hidden="true">
+			<defs>
+				<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+					<feGaussianBlur stdDeviation="3" result="blur" />
+					<feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+				</filter>
+			</defs>
+			{#if highlight.type === "move"}
+				<circle
+					cx={highlight.col * SLOT + SLOT / 2}
+					cy={highlight.row * SLOT + SLOT / 2}
+					r={PIECE / 2 + 5}
+					fill="none"
+					stroke="#00e676"
+					stroke-width="5"
+					filter="url(#glow)"
+				/>
+			{:else if highlight.type === "win"}
+				{#each highlight.pieces as p}
+					<circle
+						cx={p.col * SLOT + SLOT / 2}
+						cy={p.row * SLOT + SLOT / 2}
+						r={PIECE / 2 + 2}
+						fill="#ffe600"
+						opacity="0.75"
+						filter="url(#glow)"
+					/>
+				{/each}
+				<line
+					x1={highlight.pieces[0].col * SLOT + SLOT / 2}
+					y1={highlight.pieces[0].row * SLOT + SLOT / 2}
+					x2={highlight.pieces[3].col * SLOT + SLOT / 2}
+					y2={highlight.pieces[3].row * SLOT + SLOT / 2}
+					stroke="white"
+					stroke-width="6"
+					stroke-linecap="round"
+					filter="url(#glow)"
+				/>
+			{/if}
+		</svg>
+	{/if}
+
+	<!-- Layer 5: transparent per-column click buttons -->
 	<div class="click-layer">
 		{#each Game.gameState as _, col}
 			<button
@@ -135,6 +204,23 @@
 			></button>
 		{/each}
 	</div>
+</div>
+
+<!-- Debug log -->
+<div class="debug-log">
+	<strong>Log</strong>
+	<ol>
+		{#each [...Game.logs].reverse() as entry, reversedI}
+			{@const i = Game.logs.length - 1 - reversedI}
+			<li
+				onmouseenter={() => (hoveredLogIndex = i)}
+				onmouseleave={() => (hoveredLogIndex = null)}
+				class:highlighted={hoveredLogIndex === i && entry.highlight !== null}
+			>
+				{entry.message}
+			</li>
+		{/each}
+	</ol>
 </div>
 
 <style>
@@ -230,5 +316,54 @@
 		border: none;
 		padding: 0;
 		cursor: pointer;
+	}
+
+	.debug-log {
+		margin-top: 1.5rem;
+		padding: 0.75rem 1rem;
+		background: #1e1e1e;
+		color: #d4d4d4;
+		font-family: monospace;
+		font-size: 0.8rem;
+		border-radius: 6px;
+		max-height: 200px;
+		overflow-y: auto;
+		min-width: 300px;
+	}
+
+	.debug-log strong {
+		display: block;
+		margin-bottom: 0.4rem;
+		color: #9cdcfe;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.debug-log ol {
+		margin: 0;
+		padding-left: 1.5rem;
+	}
+
+	.debug-log li {
+		margin-bottom: 0.15rem;
+		cursor: default;
+		border-radius: 3px;
+		padding: 1px 4px;
+		transition: background 80ms;
+	}
+
+	.debug-log li:hover {
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.debug-log li.highlighted {
+		background: rgba(255, 255, 255, 0.15);
+		color: white;
+	}
+
+	.highlight-svg {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
 	}
 </style>
