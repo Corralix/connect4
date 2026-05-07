@@ -70,12 +70,14 @@ export class Connect4 {
 
 	checkForWinner() {
 		const { winner, direction, winningPieces } = search(this, 4);
-		if (winner)
-			this.log(`${winner} wins ${direction}!`, { type: "win", pieces: winningPieces, winner });
+		if (winner) {
+			const winnerLabel = winner[0].toUpperCase() + winner.slice(1);
+			this.log(`${winnerLabel} wins ${direction}!`, { type: "win", pieces: winningPieces, winner });
+		}
 		return winner;
 	}
 
-	dropPiece(col) {
+	dropPiece(col, reason = null) {
 		if (this.winner) return; // game already over
 
 		const columnArray = this.gameState[col];
@@ -87,7 +89,8 @@ export class Connect4 {
 			columnArray.push(this.currentPlayer);
 			this.moveHistory.push({ player: droppingColor, column: col, row: columnArray.length - 1 });
 			this.lastDrop = { col, row: landingRow, color: droppingColor, id: ++this.dropCount };
-			this.log(`${droppingColor} dropped in column ${col + 1}`, {
+			const colorLabel = droppingColor[0].toUpperCase() + droppingColor.slice(1);
+			this.log(`Column ${col + 1}${reason ? ` — ${reason}` : ""}`, {
 				type: "move",
 				col,
 				row: landingRow,
@@ -95,7 +98,7 @@ export class Connect4 {
 			});
 			this.currentPlayer = droppingColor === "red" ? 1 : 0;
 		} else {
-			this.log(`Column ${col + 1} is full — move rejected`, { type: "full", col });
+			this.log(`Column ${col + 1} is full`, { type: "full", col });
 		}
 
 		this.winner = this.checkForWinner();

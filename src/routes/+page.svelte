@@ -3,22 +3,28 @@
 </script>
 
 <svelte:head>
-	<title>Connect4</title>
+	<title>Connect 4</title>
 </svelte:head>
 
-<h1 id="title">Connect 4</h1>
-<div class="game-container">
+<main>
+	<h1>Connect 4</h1>
 	<Board />
-</div>
+</main>
 
 <style>
-	:root {
-		font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-		background-color: #525252;
-	}
-	.game-container {
+	main {
 		display: flex;
-		justify-content: center;
-		margin-top: 2rem;
+		flex-direction: column;
+		align-items: center;
+		padding: 2rem 1rem 4rem;
+		gap: 1.5rem;
+	}
+
+	h1 {
+		margin: 0;
+		font-size: 2rem;
+		letter-spacing: 0.04em;
+		color: #eeff00;
+		text-shadow: 0 0 24px rgba(238, 255, 0, 0.25);
 	}
 </style>
